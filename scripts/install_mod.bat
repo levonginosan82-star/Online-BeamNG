@@ -11,7 +11,7 @@ echo.
 set "GAME_DIR=C:\Program Files (x86)\Steam\steamapps\common\BeamNG.drive"
 set "MODS_DIR=%USERPROFILE%\Documents\BeamNG.drive\mods"
 set "MOD_SOURCE=%~dp0..\client\mods\OnlineBeamNG"
-set "MOD_DEST=%MODS_DIR%\OnlineBeamNG"
+set "MOD_DEST=%MODS_DIR%\unpacked\OnlineBeamNG"
 
 :: Check game exists
 if not exist "%GAME_DIR%\BeamNG.drive.exe" (

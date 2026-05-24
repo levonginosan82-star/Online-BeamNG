@@ -48,7 +48,7 @@ if (-not (Test-Path $modsDir)) {
 }
 
 # Copy mod
-$modDest = "$modsDir\OnlineBeamNG"
+$modDest = "$modsDir\unpacked\OnlineBeamNG"
 if (Test-Path $modDest) {
     Remove-Item -Recurse -Force $modDest
     Write-Step "Removed old mod version" "INFO"
