@@ -1,0 +1,12 @@
+{
+  "id": "onlinebeammp",
+  "version": "1.0.0",
+  "name": "Online BeamNG",
+  "description": "Online multiplayer mod for BeamNG.drive",
+  "authors": ["BeamNG Online Dev"],
+  "tags": ["multiplayer", "online"],
+  "dependencies": [],
+  "gameVersion": "0.38.*",
+  "type": "mod",
+  "entry": "scripts/OnlineBeamNG/modScript.lua"
+}

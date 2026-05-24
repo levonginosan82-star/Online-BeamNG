@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Online BeamNG</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <div id="connect-panel">
+      <h2>Online BeamNG</h2>
+      <div class="form-group">
+        <label>Server IP:</label>
+        <input type="text" id="serverIP" value="127.0.0.1" />
+      </div>
+      <div class="form-group">
+        <label>Port:</label>
+        <input type="number" id="serverPort" value="30814" />
+      </div>
+      <div class="form-group">
+        <label>Username:</label>
+        <input type="text" id="username" value="Player" />
+      </div>
+      <button id="btnConnect" onclick="connect()">Connect</button>
+    </div>
+    <div id="game-ui" style="display:none">
+      <div id="player-list"></div>
+      <div id="chat-container">
+        <div id="chat-messages"></div>
+        <input type="text" id="chatInput" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendChat()" />
+      </div>
+      <div id="actions">
+        <button onclick="disconnect()">Disconnect</button>
+      </div>
+    </div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

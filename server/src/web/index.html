@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BeamNG Online - Admin</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="logo">BeamNG<br><span>Online</span></div>
+    <nav>
+      <button class="nav-btn active" data-tab="dashboard">Dashboard</button>
+      <button class="nav-btn" data-tab="config">Configuration</button>
+      <button class="nav-btn" data-tab="players">Players</button>
+      <button class="nav-btn" data-tab="logs">Logs</button>
+    </nav>
+  </aside>
+  <main>
+    <header>
+      <div class="status-bar">
+        <span class="status-indicator" id="statusDot">&#9679;</span>
+        <span id="statusText">Stopped</span>
+        <div class="header-actions">
+          <button id="btnStart" class="btn btn-green">Start</button>
+          <button id="btnStop" class="btn btn-red" disabled>Stop</button>
+          <button id="btnRestart" class="btn btn-gray" disabled>Restart</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Dashboard -->
+    <section id="tab-dashboard" class="tab-content active">
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-value" id="statPlayers">0</div><div class="stat-label">Players</div></div>
+        <div class="stat-card"><div class="stat-value" id="statMaxPlayers">16</div><div class="stat-label">Max Players</div></div>
+        <div class="stat-card"><div class="stat-value" id="statVehicles">0</div><div class="stat-label">Vehicles</div></div>
+        <div class="stat-card"><div class="stat-value" id="statUptime">0s</div><div class="stat-label">Uptime</div></div>
+      </div>
+      <div class="info-panel">
+        <h3>Server Info</h3>
+        <div class="info-row"><span class="info-label">Map:</span><span id="infoMap" class="info-value">-</span></div>
+        <div class="info-row"><span class="info-label">Name:</span><span id="infoName" class="info-value">-</span></div>
+        <div class="info-row"><span class="info-label">Admin Port:</span><span id="infoAdminPort" class="info-value">30815</span></div>
+      </div>
+    </section>
+
+    <!-- Config -->
+    <section id="tab-config" class="tab-content">
+      <div class="config-grid">
+        <div class="form-group">
+          <label>Server Name</label>
+          <input type="text" id="cfg_name" value="BeamNG Online Server">
+          <small>The name displayed in the server browser</small>
+        </div>
+        <div class="form-group">
+          <label>Description</label>
+          <textarea id="cfg_description" rows="2">A BeamNG.drive multiplayer server</textarea>
+        </div>
+        <div class="form-group">
+          <label>Port</label>
+          <input type="number" id="cfg_port" value="30814">
+        </div>
+        <div class="form-group">
+          <label>Host</label>
+          <input type="text" id="cfg_host" value="0.0.0.0">
+        </div>
+        <div class="form-group">
+          <label>Max Players</label>
+          <input type="number" id="cfg_maxPlayers" value="16" min="1" max="64">
+        </div>
+        <div class="form-group">
+          <label>Password (leave empty for no password)</label>
+          <input type="text" id="cfg_password" placeholder="No password">
+        </div>
+        <div class="form-group">
+          <label>Map</label>
+          <input type="text" id="cfg_map" value="gridmap">
+        </div>
+        <div class="form-group">
+          <label>Max Vehicles Per Player</label>
+          <input type="number" id="cfg_maxVehicles" value="4" min="1" max="20">
+        </div>
+        <div class="form-group">
+          <label>Physics Tick Rate</label>
+          <input type="number" id="cfg_tickRate" value="20" min="10" max="60">
+        </div>
+        <div class="form-group">
+          <label>Log Level</label>
+          <select id="cfg_logLevel">
+            <option value="debug">Debug</option>
+            <option value="info" selected>Info</option>
+            <option value="warn">Warning</option>
+            <option value="error">Error</option>
+          </select>
+        </div>
+      </div>
+      <div class="config-toggles">
+        <label class="toggle"><input type="checkbox" id="cfg_enableDamageSync" checked><span class="toggle-label">Damage Sync</span></label>
+        <label class="toggle"><input type="checkbox" id="cfg_enableNodeSync"><span class="toggle-label">Node Sync (experimental)</span></label>
+        <label class="toggle"><input type="checkbox" id="cfg_enableModCheck" checked><span class="toggle-label">Mod Check</span></label>
+        <label class="toggle"><input type="checkbox" id="cfg_private"><span class="toggle-label">Private Server</span></label>
+      </div>
+      <button id="btnSaveConfig" class="btn btn-blue" style="margin-top:16px">Save Configuration</button>
+      <span id="configStatus" class="config-status"></span>
+    </section>
+
+    <!-- Players -->
+    <section id="tab-players" class="tab-content">
+      <table class="players-table">
+        <thead><tr><th>ID</th><th>Name</th><th>Role</th><th>Ping</th></tr></thead>
+        <tbody id="playersBody"><tr><td colspan="4" class="empty-msg">No players connected</td></tr></tbody>
+      </table>
+    </section>
+
+    <!-- Logs -->
+    <section id="tab-logs" class="tab-content">
+      <div class="logs-toolbar">
+        <button id="btnAutoScroll" class="btn btn-gray active">Auto-scroll</button>
+        <button id="btnClearLogs" class="btn btn-gray">Clear</button>
+      </div>
+      <div class="logs-container" id="logsContainer"></div>
+    </section>
+  </main>
+</div>
+<script src="app.js"></script>
+</body>
+</html>
