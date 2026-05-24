@@ -150,7 +150,11 @@ function M.renderMainContent()
       </div>
       <div style="margin-top:8px;display:flex;gap:6px;">
         <button onclick="disconnectFromServer()" style="flex:1;padding:6px;background:#ef5350;border:none;border-radius:4px;color:#fff;font-weight:600;cursor:pointer;">Disconnect</button>
-        <button onclick="showVehicleSpawn()" style="flex:1;padding:6px;background:#4caf50;border:none;border-radius:4px;color:#fff;font-weight:600;cursor:pointer;">Spawn Vehicle</button>
+        <button onclick="showVehicleSpawn()" style="flex:1;padding:6px;background:#4caf50;border:none;border-radius:4px;color:#fff;font-weight:600;cursor:pointer;">Spawn</button>
+      </div>
+      <div style="margin-top:4px;display:flex;gap:6px;">
+        <button onclick="spectateNext(true)" style="flex:1;padding:4px;background:#7e57c2;border:none;border-radius:4px;color:#fff;font-size:11px;cursor:pointer;">Spectate &gt;</button>
+        <button onclick="spectateNext(false)" style="flex:1;padding:4px;background:#7e57c2;border:none;border-radius:4px;color:#fff;font-size:11px;cursor:pointer;">&lt; Spectate</button>
       </div>
     </div>
   ]]
@@ -233,7 +237,88 @@ function M.sendChatMessage()
 end
 
 function M.showVehicleSpawn()
-  log("I", "mp_ui", "Vehicle spawn requested")
+  if mainWindow then
+    guihooks.updateWindow(mainWindow, {
+      content = function()
+        local vehicles = {
+          "etk800", "sunburst", "moonhawk", "covet",
+          "hopper", "roamer", "bluebuck", "pickup",
+          "bastion", "burnside", "legran", "miramar",
+          "sbr4", "scintilla", "suzuki", "vivace",
+          "wendover", "pessima", "ibishu", "barstow"
+        }
+        local html = [[
+          <div style="padding:20px;font-family:'Segoe UI',sans-serif;color:#fff;">
+            <h3 style="color:#4fc3f7;margin-bottom:16px;">Spawn Vehicle</h3>
+            <div style="margin-bottom:12px;">
+              <label style="display:block;font-size:12px;color:#888;margin-bottom:4px;">Select Vehicle</label>
+              <select id="vehicleSelect" style="width:100%;padding:8px 10px;background:#222;border:1px solid #444;border-radius:4px;color:#fff;font-size:13px;">
+        ]]
+        for _, v in ipairs(vehicles) do
+          html = html .. '<option value="' .. v .. '">' .. v .. '</option>'
+        end
+        html = html .. [[
+              </select>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button onclick="spawnSelectedVehicle()" style="flex:1;padding:8px;background:#4caf50;border:none;border-radius:4px;color:#fff;font-weight:600;cursor:pointer;">Spawn</button>
+              <button onclick="closeSpawnMenu()" style="flex:1;padding:8px;background:#666;border:none;border-radius:4px;color:#fff;font-weight:600;cursor:pointer;">Cancel</button>
+            </div>
+          </div>
+        ]]
+        return html
+      end,
+    })
+  end
+end
+
+function M.spawnSelectedVehicle()
+  local model = guihooks.getInputValue("vehicleSelect") or "etk800"
+  mp_network.sendVehicleSpawn({ model = model })
+  guihooks.trigger("toastrMsg", { type = "info", title = "OnlineBeamNG", msg = "Spawning " .. model })
+  if mainWindow then
+    guihooks.closeWindow(mainWindow)
+    mainWindow = nil
+  end
+  M.refreshMainUI()
+end
+
+function M.closeSpawnMenu()
+  if mainWindow then
+    guihooks.closeWindow(mainWindow)
+    mainWindow = nil
+  end
+  M.refreshMainUI()
+end
+
+function M.spectateNext(forward)
+  local remoteVehicles = mp_vehicle_ge.getRemoteVehicles()
+  local vehicleList = {}
+  for id, _ in pairs(remoteVehicles) do
+    table.insert(vehicleList, id)
+  end
+  if #vehicleList == 0 then
+    M.showToast("No vehicles to spectate", "info")
+    return
+  end
+  local current = mp_vehicle_ge.getSpectatingId()
+  local idx = 1
+  if current then
+    for i, id in ipairs(vehicleList) do
+      if id == current then
+        idx = i
+        break
+      end
+    end
+  end
+  if forward then
+    idx = idx + 1
+    if idx > #vehicleList then idx = 1 end
+  else
+    idx = idx - 1
+    if idx < 1 then idx = #vehicleList end
+  end
+  mp_vehicle_ge.spectate(vehicleList[idx])
 end
 
 function M.onKeyPress(key, isDown)

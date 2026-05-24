@@ -20,7 +20,9 @@ export class Room {
 
   addClient(client: Client): void {
     this.clients.set(client.id, client);
-    client.role = this.clients.size === 1 ? "admin" : "user";
+    if (this.clients.size === 1 && client.role === "user") {
+      client.role = "admin";
+    }
 
     this.broadcast(MessageType.PLAYER_JOIN, client.toInfo(), client.id);
 

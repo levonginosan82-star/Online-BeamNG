@@ -6,6 +6,7 @@ import { Logger } from "./logger";
 export class Client {
   public id: string;
   public name: string;
+  public ip: string;
   public role: string = "user";
   public ping: number = 0;
   public authenticated: boolean = false;
@@ -21,6 +22,7 @@ export class Client {
   ) {
     this.id = uuidv4();
     this.name = `Player_${this.id.slice(0, 4)}`;
+    this.ip = (ws as any)._socket?.remoteAddress || "0.0.0.0";
   }
 
   onOpen(): void {

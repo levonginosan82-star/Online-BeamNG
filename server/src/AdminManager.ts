@@ -1,5 +1,5 @@
 import { Client } from "./Client";
-import { BanEntry, WeatherData, TimeData, ChatCommand } from "./protocol";
+import { BanEntry, WeatherData, TimeData, ChatCommand, MessageType } from "./protocol";
 import { Logger } from "./logger";
 import fs from "fs";
 import path from "path";
@@ -7,6 +7,7 @@ import path from "path";
 export class AdminManager {
   private admins: Set<string> = new Set();
   private banList: Map<string, BanEntry> = new Map();
+  private adminPassword: string;
   private weather: WeatherData = {
     weather: "clear",
     time: 12.0,
@@ -21,12 +22,24 @@ export class AdminManager {
   };
   private logger: Logger;
   private dataDir: string;
+  private broadcastSystemMessage: (message: string) => void = () => {};
 
-  constructor(logger: Logger, dataDir: string) {
+  constructor(logger: Logger, dataDir: string, adminPassword: string) {
     this.logger = logger;
     this.dataDir = dataDir;
+    this.adminPassword = adminPassword;
+    this.ensureDataDir();
     this.loadBanList();
-    this.loadAdmins();
+  }
+
+  private ensureDataDir(): void {
+    try {
+      if (!fs.existsSync(this.dataDir)) {
+        fs.mkdirSync(this.dataDir, { recursive: true });
+      }
+    } catch (err) {
+      this.logger.error("Failed to create data directory:", err);
+    }
   }
 
   setBroadcastCallback(callback: (message: string) => void): void {
@@ -34,14 +47,17 @@ export class AdminManager {
   }
 
   authenticateAdmin(client: Client, password: string): boolean {
-    // TODO: Implement admin password check
-    // For now, we'll use a simple password check
-    if (password === "admin123") {
+    if (!this.adminPassword) {
+      this.logger.warn(`Admin login rejected - no admin password set`);
+      return false;
+    }
+    if (password === this.adminPassword) {
       client.role = "admin";
       this.admins.add(client.id);
       this.logger.info(`Admin login: ${client.name} (${client.id})`);
       return true;
     }
+    this.logger.warn(`Failed admin login attempt: ${client.name} (${client.id})`);
     return false;
   }
 
@@ -70,7 +86,7 @@ export class AdminManager {
         this.handleKick(args, serverClients);
         break;
       case "ban":
-        this.handleBan(args, serverClients);
+        this.handleBan(args, serverClients, sender);
         break;
       case "unban":
         this.handleUnban(args);
@@ -91,7 +107,7 @@ export class AdminManager {
         this.handleHelp(senderClient);
         break;
       default:
-        senderClient.send("SystemMessage", { 
+        senderClient.send(MessageType.SYSTEM_MESSAGE, { 
           message: `Unknown command: ${cmd}. Use /help for available commands.`,
           type: "system"
         });
@@ -126,7 +142,7 @@ export class AdminManager {
     }
   }
 
-  private handleBan(args: string[], serverClients: Map<string, Client>): void {
+  private handleBan(args: string[], serverClients: Map<string, Client>, sender?: string): void {
     if (args.length === 0) {
       this.broadcastSystemMessage("Usage: /ban <playerName> [reason]");
       return;
@@ -146,17 +162,17 @@ export class AdminManager {
     if (targetClient) {
       const banEntry: BanEntry = {
         id: targetClient.id,
-        ip: "unknown", // TODO: Get real IP from client connection
-        bannedBy: targetClient.name,
+        ip: targetClient.ip || "0.0.0.0",
+        bannedBy: sender || "unknown",
         banReason: reason,
         banTime: Date.now(),
-        expires: undefined, // Permanent ban
+        expires: undefined,
       };
 
       this.banList.set(targetClient.id, banEntry);
       this.saveBanList();
       targetClient.kick(`Banned: ${reason}`);
-      this.broadcastSystemMessage(`${targetName} was banned: ${reason}`);
+      this.broadcastSystemMessage(`${targetName} was banned by ${sender || "admin"}: ${reason}`);
     } else {
       this.broadcastSystemMessage(`Player "${targetName}" not found`);
     }
@@ -270,14 +286,10 @@ export class AdminManager {
       "/help - Show this help"
     ].join("\n");
     
-    adminClient.send("SystemMessage", { 
+    adminClient.send(MessageType.SYSTEM_MESSAGE, { 
       message: helpText,
       type: "system"
     });
-  }
-
-  private broadcastSystemMessage(message: string): void {
-    // This will be implemented in the main server
   }
 
   checkBan(clientId: string, clientIp: string): BanEntry | null {

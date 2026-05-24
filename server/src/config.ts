@@ -6,6 +6,7 @@ export interface ServerConfig {
   description: string;
   password: string;
   authKey: string;
+  adminPassword: string;
   map: string;
   maxVehicles: number;
   tickRate: number;
@@ -24,6 +25,7 @@ export const defaultConfig: ServerConfig = {
   description: "A BeamNG.drive multiplayer server",
   password: "",
   authKey: "",
+  adminPassword: "",
   map: "gridmap",
   maxVehicles: 4,
   tickRate: 20,
@@ -44,6 +46,7 @@ export function loadConfig(path?: string): ServerConfig {
     BEMP_DESCRIPTION: "description",
     BEMP_PASSWORD: "password",
     BEMP_AUTH_KEY: "authKey",
+    BEMP_ADMIN_PASSWORD: "adminPassword",
     BEMP_MAP: "map",
     BEMP_MAX_VEHICLES: "maxVehicles",
     BEMP_TICK_RATE: "tickRate",

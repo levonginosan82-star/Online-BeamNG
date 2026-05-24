@@ -2,8 +2,20 @@ local M = {}
 local updateQueue = {}
 local queueTimer = nil
 
+local currentWeather = nil
+local currentTime = nil
+
 function M.onInit()
   log("I", "mp_updates_ge", "Updates GE initialized")
+
+  mp_network.onTimeSync = function(data)
+    M.onTimeSync(data)
+  end
+
+  mp_network.onWeatherSync = function(data)
+    M.onWeatherSync(data)
+  end
+
   queueTimer = timedelay(M.processQueue, 16)
 end
 
@@ -11,6 +23,31 @@ function M.onDestroy()
   if queueTimer then
     timedefer(queueTimer)
   end
+end
+
+function M.onTimeSync(data)
+  if not data then return end
+  log("D", "mp_updates_ge", "Time sync: " .. tostring(data.time) .. "h (scale: " .. tostring(data.timeScale) .. "x)")
+  currentTime = data
+  pcall(function()
+    if core_gamestate and core_gamestate.setTimeOfDay then
+      core_gamestate.setTimeOfDay(data.time)
+    end
+  end)
+  pcall(function()
+    if core_gamestate and core_gamestate.setTimeScale then
+      core_gamestate.setTimeScale(data.timeScale or 1)
+    end
+  end)
+end
+
+function M.onWeatherSync(data)
+  if not data then return end
+  log("D", "mp_updates_ge", "Weather sync: " .. tostring(data.weather))
+  currentWeather = data
+  pcall(function()
+    executeCommand("setWeather", data.weather)
+  end)
 end
 
 function M.queueUpdate(vehicleId, data)

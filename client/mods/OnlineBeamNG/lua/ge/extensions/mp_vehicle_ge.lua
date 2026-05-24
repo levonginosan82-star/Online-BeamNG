@@ -2,9 +2,13 @@ local M = {}
 local remoteVehicles = {}
 local updateTimer = nil
 local sendInterval = 50
+local myVehicleId = nil
+local spectatingId = nil
+local previousCameraMode = nil
 
 function M.onInit()
   log("I", "mp_vehicle_ge", "Vehicle GE initialized")
+  myVehicleId = mp_network.getMyId() .. "_vehicle"
 
   mp_network.onVehicleSpawn = function(data)
     M.spawnRemoteVehicle(data)
@@ -52,7 +56,7 @@ function M.updateLoop()
   local angVel = veh:getAngularVelocity()
 
   local state = {
-    id = "player_vehicle",
+    id = (mp_network.getMyId() or "player") .. "_vehicle",
     position = { x = pos.x, y = pos.y, z = pos.z },
     rotation = { x = rot.x, y = rot.y, z = rot.z, w = rot.w },
     velocity = { x = vel.x, y = vel.y, z = vel.z },
@@ -159,6 +163,32 @@ end
 
 function M.getRemoteVehicles()
   return remoteVehicles
+end
+
+function M.spectate(vehicleId)
+  local entry = remoteVehicles[vehicleId]
+  if not entry or not entry.obj then
+    log("W", "mp_vehicle_ge", "Cannot spectate vehicle " .. tostring(vehicleId) .. ": not found")
+    return
+  end
+  spectatingId = vehicleId
+  pcall(function()
+    setCameraTarget(entry.obj)
+    setCameraMode("chase")
+  end)
+  log("I", "mp_vehicle_ge", "Spectating vehicle: " .. tostring(vehicleId))
+end
+
+function M.stopSpectate()
+  spectatingId = nil
+  pcall(function()
+    setCameraMode("chase")
+    setCameraTarget(getPlayerVehicle(0))
+  end)
+end
+
+function M.getSpectatingId()
+  return spectatingId
 end
 
 return M

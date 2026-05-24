@@ -22,7 +22,8 @@ export class Server {
     this.room = new Room("main", this.config.name, this.config);
     this.adminManager = new AdminManager(
       this.logger, 
-      path.join(process.cwd(), "data")
+      path.join(process.cwd(), "data"),
+      this.config.adminPassword
     );
     this.adminManager.setBroadcastCallback((message: string) => {
       this.broadcastSystemMessage(message);
@@ -92,6 +93,20 @@ export class Server {
           this.handleAuth(client, packet);
           break;
 
+        case MessageType.ADMIN_AUTH:
+          if (client.authenticated) {
+            const adminPw = packet.data?.adminPassword || "";
+            const success = this.adminManager.authenticateAdmin(client, adminPw);
+            client.send(MessageType.ADMIN_AUTH_RESPONSE, {
+              success,
+              role: success ? "admin" : "user",
+            });
+            if (success) {
+              this.broadcastSystemMessage(`${client.name} logged in as admin`);
+            }
+          }
+          break;
+
         case MessageType.VEHICLE_UPDATE:
           this.room.handleVehicleUpdate(client.id, packet.data as VehicleState);
           break;
@@ -138,7 +153,7 @@ export class Server {
     const { username, authKey } = packet.data || {};
 
     // Check ban list
-    const ban = this.adminManager.checkBan(client.id, "unknown");
+    const ban = this.adminManager.checkBan(client.id, client.ip);
     if (ban) {
       client.send(MessageType.AUTH_RESPONSE, {
         success: false,
@@ -197,7 +212,7 @@ export class Server {
       if (client.isAdmin()) {
         this.adminManager.executeCommand(command, this.clients);
       } else {
-        client.send("SystemMessage", { 
+        client.send(MessageType.SYSTEM_MESSAGE, { 
           message: "You don't have permission to use admin commands",
           type: "system"
         });
@@ -250,7 +265,7 @@ export class Server {
 
   broadcastSystemMessage(message: string): void {
     for (const client of this.clients.values()) {
-      client.send("SystemMessage", { 
+      client.send(MessageType.SYSTEM_MESSAGE, { 
         message,
         type: "system"
       });
