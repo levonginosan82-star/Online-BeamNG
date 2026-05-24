@@ -13,25 +13,25 @@ if majorVer < minVer or majorVer > maxVer then
 end
 log("M", "versionCheck", "OnlineBeamNG is compatible with the current version.")
 
-load("core_network")
+extensions.load("core_network")
 setExtensionUnloadMode("core_network", "manual")
 
-load("mp_config")
+extensions.load("mp_config")
 setExtensionUnloadMode("mp_config", "manual")
 
-load("mp_network")
+extensions.load("mp_network")
 setExtensionUnloadMode("mp_network", "manual")
 
-load("mp_vehicle_ge")
+extensions.load("mp_vehicle_ge")
 setExtensionUnloadMode("mp_vehicle_ge", "manual")
 
-load("mp_position_ge")
+extensions.load("mp_position_ge")
 setExtensionUnloadMode("mp_position_ge", "manual")
 
-load("mp_updates_ge")
+extensions.load("mp_updates_ge")
 setExtensionUnloadMode("mp_updates_ge", "manual")
 
-load("mp_ui")
+extensions.load("mp_ui")
 setExtensionUnloadMode("mp_ui", "manual")
 
 extensions.core_input_categories.onlinebeammp = {
