@@ -6,7 +6,7 @@
   "authors": ["BeamNG Online Dev"],
   "tags": ["multiplayer", "online"],
   "dependencies": [],
-  "gameVersion": "0.38.*",
+  "gameVersion": "0.36.*",
   "type": "mod",
   "entry": "scripts/OnlineBeamNG/modScript.lua"
 }
