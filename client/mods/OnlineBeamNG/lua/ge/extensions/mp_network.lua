@@ -64,6 +64,24 @@ function M.onInit()
     end
   end)
 
+  core_network.on("SystemMessage", function(data)
+    if M.onSystemMessage then
+      M.onSystemMessage(data)
+    end
+  end)
+
+  core_network.on("TimeSync", function(data)
+    if M.onTimeSync then
+      M.onTimeSync(data)
+    end
+  end)
+
+  core_network.on("WeatherSync", function(data)
+    if M.onWeatherSync then
+      M.onWeatherSync(data)
+    end
+  end)
+
   core_network.on("VehicleUpdate", function(data)
     if M.onVehicleUpdate then
       M.onVehicleUpdate(data)
@@ -115,6 +133,14 @@ end
 
 function M.sendChat(message)
   core_network.send("ChatMessage", { message = message })
+end
+
+function M.sendChatCommand(command)
+  core_network.send("ChatCommand", { command = command })
+end
+
+function M.sendAdminLogin(password)
+  core_network.send("AdminAuth", { adminPassword = password })
 end
 
 function M.sendVehicleUpdate(state)

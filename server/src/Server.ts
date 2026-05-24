@@ -3,7 +3,9 @@ import { Client } from "./Client";
 import { Room } from "./Room";
 import { Logger } from "./logger";
 import { ServerConfig, loadConfig } from "./config";
-import { MessageType, MPacket, VehicleState, ChatData } from "./protocol";
+import { AdminManager } from "./AdminManager";
+import { MessageType, MPacket, VehicleState, ChatData, ChatCommand } from "./protocol";
+import path from "path";
 
 export class Server {
   private wss!: WebSocketServer;
@@ -11,12 +13,20 @@ export class Server {
   private room: Room;
   private logger: Logger;
   private config: ServerConfig;
+  private adminManager: AdminManager;
   private tickInterval: NodeJS.Timeout | null = null;
 
   constructor(config?: Partial<ServerConfig>) {
     this.config = { ...loadConfig(), ...config };
     this.logger = new Logger("Server", this.config.logLevel);
     this.room = new Room("main", this.config.name, this.config);
+    this.adminManager = new AdminManager(
+      this.logger, 
+      path.join(process.cwd(), "data")
+    );
+    this.adminManager.setBroadcastCallback((message: string) => {
+      this.broadcastSystemMessage(message);
+    });
   }
 
   start(): void {
@@ -95,7 +105,7 @@ export class Server {
           break;
 
         case MessageType.CHAT_MESSAGE:
-          this.room.handleChat(client.id, packet.data?.message || "");
+          this.handleChat(client, packet.data?.message || "");
           break;
 
         case MessageType.VEHICLE_DAMAGE:
@@ -125,7 +135,19 @@ export class Server {
   }
 
   private handleAuth(client: Client, packet: MPacket): void {
-    const { username } = packet.data || {};
+    const { username, authKey } = packet.data || {};
+
+    // Check ban list
+    const ban = this.adminManager.checkBan(client.id, "unknown");
+    if (ban) {
+      client.send(MessageType.AUTH_RESPONSE, {
+        success: false,
+        reason: `Banned: ${ban.banReason}`,
+      });
+      client.ws.close(4002, "Banned");
+      return;
+    }
+
     if (this.room.getClientCount() >= this.config.maxPlayers) {
       client.send(MessageType.AUTH_RESPONSE, {
         success: false,
@@ -143,6 +165,13 @@ export class Server {
       return;
     }
 
+    // Handle admin authentication
+    if (packet.data?.adminPassword) {
+      if (this.adminManager.authenticateAdmin(client, packet.data.adminPassword)) {
+        this.logger.info(`Admin login: ${client.name} (${client.id})`);
+      }
+    }
+
     if (username) {
       client.name = username.slice(0, 24);
     }
@@ -155,6 +184,29 @@ export class Server {
     });
 
     this.room.addClient(client);
+    
+    // Send initial weather and time data
+    client.send(MessageType.TIME_SYNC, this.adminManager.getTime());
+    client.send(MessageType.WEATHER_SYNC, this.adminManager.getWeather());
+  }
+
+  private handleChat(client: Client, message: string): void {
+    // Check for admin commands
+    const command = this.adminManager.parseCommand(message, client.name, client.id);
+    if (command) {
+      if (client.isAdmin()) {
+        this.adminManager.executeCommand(command, this.clients);
+      } else {
+        client.send("SystemMessage", { 
+          message: "You don't have permission to use admin commands",
+          type: "system"
+        });
+      }
+      return;
+    }
+
+    // Regular chat message
+    this.room.handleChat(client.id, message);
   }
 
   private handleDisconnect(client: Client): void {
@@ -192,6 +244,20 @@ export class Server {
       map: this.room.map,
       serverName: this.config.name,
       playersList: this.room.getPlayerList(),
+      admins: Array.from(this.clients.values()).filter(c => c.isAdmin()).map(c => c.name),
     };
+  }
+
+  broadcastSystemMessage(message: string): void {
+    for (const client of this.clients.values()) {
+      client.send("SystemMessage", { 
+        message,
+        type: "system"
+      });
+    }
+  }
+
+  getAdminManager(): AdminManager {
+    return this.adminManager;
   }
 }

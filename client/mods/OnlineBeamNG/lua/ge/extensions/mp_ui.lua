@@ -28,6 +28,13 @@ function M.onInit()
     if #chatHistory > 100 then table.remove(chatHistory, 1) end
   end
 
+  mp_network.onSystemMessage = function(data)
+    M.showToast(data.message, data.type or "info")
+    if data.type == "admin" then
+      log("I", "mp_ui", "Admin command: " .. data.message)
+    end
+  end
+
   mp_network.onKicked = function(reason)
     M.showToast("Kicked: " .. tostring(reason), "error")
     M.showConnectUI()
@@ -153,34 +160,87 @@ function M.showToast(message, msgType)
   guihooks.trigger("toastrMsg", { type = msgType or "info", title = "OnlineBeamNG", msg = message })
 end
 
--- JS bridge functions (called from HTML)
-function M.connectToServer()
-  local ip = guihooks.getInputValue("serverIP") or "127.0.0.1"
-  local port = tonumber(guihooks.getInputValue("serverPort") or 30814)
-  local username = guihooks.getInputValue("username") or "Player"
+  -- JS bridge functions (called from HTML)
+  function M.connectToServer()
+    local ip = guihooks.getInputValue("serverIP") or "127.0.0.1"
+    local port = tonumber(guihooks.getInputValue("serverPort") or 30814)
+    local username = guihooks.getInputValue("username") or "Player"
 
-  mp_config.set("serverIP", ip)
-  mp_config.set("serverPort", port)
-  mp_config.set("username", username)
+    mp_config.set("serverIP", ip)
+    mp_config.set("serverPort", port)
+    mp_config.set("username", username)
 
-  core_network.connect(ip, port, username, "")
-end
+    core_network.connect(ip, port, username, "")
+  end
 
-function M.disconnectFromServer()
-  core_network.disconnect()
-  M.showConnectUI()
-end
+  function M.disconnectFromServer()
+    core_network.disconnect()
+    M.showConnectUI()
+  end
+
+  function M.showAdminLoginDialog()
+    if not mainWindow then
+      mainWindow = guihooks.createWindow({
+        id = "onlineBeamNG_admin",
+        title = "Admin Login",
+        width = 300,
+        height = 200,
+        resizable = false,
+        content = function()
+          return [[
+            <div style="padding:20px;font-family:'Segoe UI',sans-serif;color:#fff;">
+              <h3 style="color:#4fc3f7;margin-bottom:16px;">Admin Login</h3>
+              <div style="margin-bottom:12px;">
+                <input type="password" id="adminPassword" placeholder="Admin Password" style="width:100%;padding:8px 10px;background:#222;border:1px solid #444;border-radius:4px;color:#fff;font-size:14px;" />
+              </div>
+              <div style="display:flex;gap:6px;">
+                <button onclick="submitAdminLogin()" style="flex:1;padding:8px;background:#4fc3f7;border:none;border-radius:4px;color:#000;font-weight:600;cursor:pointer;">Login</button>
+                <button onclick="closeAdminLogin()" style="flex:1;padding:8px;background:#666;border:none;border-radius:4px;color:#fff;font-weight:600;cursor:pointer;">Cancel</button>
+              </div>
+            </div>
+          ]]
+        end,
+      })
+    end
+  end
+
+  function M.submitAdminLogin()
+    local password = guihooks.getInputValue("adminPassword") or ""
+    mp_network.sendAdminLogin(password)
+    guihooks.closeWindow(mainWindow)
+    mainWindow = nil
+  end
+
+  function M.closeAdminLogin()
+    if mainWindow then
+      guihooks.closeWindow(mainWindow)
+      mainWindow = nil
+    end
+  end
 
 function M.sendChatMessage()
   local message = guihooks.getInputValue("chatInput") or ""
   if message ~= "" then
-    mp_network.sendChat(message)
+    -- Check for admin commands
+    if string.sub(message, 1, 1) == "/" then
+      log("I", "mp_ui", "Admin command: " .. message)
+      mp_network.sendChatCommand(message)
+    else
+      mp_network.sendChat(message)
+    end
     guihooks.setInputValue("chatInput", "")
   end
 end
 
 function M.showVehicleSpawn()
   log("I", "mp_ui", "Vehicle spawn requested")
+end
+
+function M.onKeyPress(key, isDown)
+  if key == "F3" and not isDown then
+    -- Toggle admin login dialog
+    M.showAdminLoginDialog()
+  end
 end
 
 return M

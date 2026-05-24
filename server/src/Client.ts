@@ -98,6 +98,10 @@ export class Client {
     });
   }
 
+  isAdmin(): boolean {
+    return this.role === "admin";
+  }
+
   updatePing(): number {
     this.ping = Date.now() - this.lastPingTime;
     return this.ping;

@@ -132,6 +132,18 @@ function M.handleMessage(data)
   else
     log("D", "core_network", "Unhandled message type: " .. tostring(msgType))
   end
+
+  -- Special handling for server messages that need to be routed
+  if msgType == "SystemMessage" or msgType == "TimeSync" or msgType == "WeatherSync" then
+    if handlers[msgType] then
+      for _, handler in ipairs(handlers[msgType]) do
+        local hOk, hErr = pcall(handler, msgData)
+        if not hOk then
+          log("E", "core_network", "Handler error for " .. tostring(msgType) .. ": " .. tostring(hErr))
+        end
+      end
+    end
+  end
 end
 
 function M.on(type, handler)
